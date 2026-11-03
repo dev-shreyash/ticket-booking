@@ -1,0 +1,2 @@
+ALTER TABLE "BookingSeat"
+ADD COLUMN "seatTypeSnapshot" TEXT NOT NULL DEFAULT 'STANDARD';

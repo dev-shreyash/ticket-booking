@@ -1,0 +1,7 @@
+
+export const HOLD_DURATION_SECONDS = 120;
+
+export const HOLD_DURATION_MS =
+  HOLD_DURATION_SECONDS * 1000;
+
+export const MAX_HOLD_SEATS = 6;

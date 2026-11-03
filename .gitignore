@@ -1,0 +1,33 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# Next.js
+/.next
+/out
+/build
+
+# generated Prisma client
+/src/generated/prisma
+
+# local environment files
+.env
+.env.*
+!.env.example
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# editor / OS
+.DS_Store
+*.pem
+.vscode/
+.idea/
+
+# tests / coverage
+/coverage
+/playwright-report
+/test-results
