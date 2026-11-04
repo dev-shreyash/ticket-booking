@@ -76,6 +76,20 @@ export async function listUserDocuments(userId: string) {
   });
 }
 
+export async function findUserDocument(
+  userId: string,
+  type: UserDocumentType,
+) {
+  return prisma.userDocument.findUnique({
+    where: {
+      userId_type: {
+        userId,
+        type,
+      },
+    },
+  });
+}
+
 export async function deleteUserDocument(
   userId: string,
   type: UserDocumentType,

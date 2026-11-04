@@ -3,7 +3,6 @@ import { randomUUID } from "node:crypto";
 
 import {
   createDocumentUploadUrl,
-  createDocumentViewUrl,
   deleteDocumentObject,
   getDocumentObjectBytes,
   getDocumentObjectMetadata,
@@ -25,6 +24,7 @@ import { AppError } from "@/lib/errors";
 
 import {
   deleteUserDocument,
+  findUserDocument,
   listUserDocuments,
   saveUserDocument,
 } from "./document.repository";
@@ -58,6 +58,7 @@ function assertOwnedDocumentObjectKey(
   contentType: string,
 ) {
   const prefix = `users/${userId}/documents/${type}/`;
+
   const fileName = objectKey.startsWith(prefix)
     ? objectKey.slice(prefix.length)
     : "";
@@ -123,8 +124,8 @@ export async function completeDocumentUpload(
   );
 
   let metadata: Awaited<
-  ReturnType<typeof getDocumentObjectMetadata>
-    >;
+    ReturnType<typeof getDocumentObjectMetadata>
+  >;
 
   try {
     metadata = await getDocumentObjectMetadata(input.objectKey);
@@ -204,11 +205,6 @@ export async function completeDocumentUpload(
     }
   }
 
-  const viewUrl = await createDocumentViewUrl({
-    key: result.document.objectKey,
-    contentType: result.document.contentType,
-  });
-
   return {
     id: result.document.id,
     type: result.document.type,
@@ -217,28 +213,59 @@ export async function completeDocumentUpload(
     fileSize: result.document.fileSize,
     createdAt: result.document.createdAt.toISOString(),
     updatedAt: result.document.updatedAt.toISOString(),
-    viewUrl,
+    viewUrl: `/api/me/documents/${result.document.type}/file`,
   };
 }
 
 export async function getCustomerDocuments(userId: string) {
   const documents = await listUserDocuments(userId);
 
-  return Promise.all(
-    documents.map(async (document) => ({
-      id: document.id,
-      type: document.type,
-      fileName: document.fileName,
-      contentType: document.contentType,
-      fileSize: document.fileSize,
-      createdAt: document.createdAt.toISOString(),
-      updatedAt: document.updatedAt.toISOString(),
-      viewUrl: await createDocumentViewUrl({
-        key: document.objectKey,
-        contentType: document.contentType,
-      }),
-    })),
-  );
+  return documents.map((document) => ({
+    id: document.id,
+    type: document.type,
+    fileName: document.fileName,
+    contentType: document.contentType,
+    fileSize: document.fileSize,
+    createdAt: document.createdAt.toISOString(),
+    updatedAt: document.updatedAt.toISOString(),
+    viewUrl: `/api/me/documents/${document.type}/file`,
+  }));
+}
+
+export async function getCustomerDocumentFile(
+  userId: string,
+  type: UserDocumentType,
+) {
+  const document = await findUserDocument(userId, type);
+
+  if (!document) {
+    throw new AppError(
+      "The requested document was not found.",
+      "DOCUMENT_NOT_FOUND",
+      404,
+    );
+  }
+
+  const bytes = await getDocumentObjectBytes(document.objectKey);
+
+  // Verify the stored object still matches the registered document.
+  if (
+    bytes.length !== document.fileSize ||
+    !hasValidDocumentSignature(bytes, document.contentType)
+  ) {
+    throw new AppError(
+      "The stored document failed file validation.",
+      "INVALID_STORED_DOCUMENT",
+      500,
+    );
+  }
+
+  return {
+    bytes,
+    contentType: document.contentType,
+    fileName: document.fileName,
+    fileSize: document.fileSize,
+  };
 }
 
 export async function removeCustomerDocument(

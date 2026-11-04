@@ -11,7 +11,6 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const UPLOAD_URL_EXPIRY_SECONDS = 300;
-const VIEW_URL_EXPIRY_SECONDS = 300;
 
 let s3Client: S3Client | undefined;
 
@@ -70,31 +69,6 @@ export async function createDocumentUploadUrl({
   });
 }
 
-/**
- * Generate a temporary private viewing URL.
- *
- * The object remains private in S3.
- */
-export async function createDocumentViewUrl({
-  key,
-  contentType,
-}: {
-  key: string;
-  contentType: string;
-}): Promise<string> {
-  const { bucketName } = getS3Configuration();
-
-  const command = new GetObjectCommand({
-    Bucket: bucketName,
-    Key: key,
-    ResponseContentType: contentType,
-    ResponseContentDisposition: "inline",
-  });
-
-  return getSignedUrl(getS3Client(), command, {
-    expiresIn: VIEW_URL_EXPIRY_SECONDS,
-  });
-}
 
 /**
  * Retrieve object metadata without downloading the file.
