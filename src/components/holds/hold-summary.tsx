@@ -23,6 +23,8 @@ import type {
     SeatMapData,
 } from "@/modules/seats/seat.types";
 
+import DocumentUploader from "@/components/documents/document-uploader";
+
 type HoldData = {
     holdId: string;
     showId: string;
@@ -113,10 +115,22 @@ export default function HoldSummary({
     const releaseInFlightRef = useRef(false);
     const automaticReleaseStarted = useRef(false);
 
+    // Document eligibility state
+    const [hasRequiredDocument, setHasRequiredDocument] = useState(false);
+    const [documentsLoading, setDocumentsLoading] = useState(true);
+
     // Always return to the existing seat-selection page.
     function returnToSeatSelection(showId: string) {
         router.replace(`/shows/${showId}/seats`);
     }
+
+    const handleDocumentEligibilityChange = useCallback(
+        (eligible: boolean, loading: boolean) => {
+            setHasRequiredDocument(eligible);
+            setDocumentsLoading(loading);
+        },
+        [],
+    );
 
     const loadCheckout = useCallback(async () => {
         try {
@@ -328,6 +342,14 @@ export default function HoldSummary({
             return;
         }
 
+        // Document eligibility guard
+        if (documentsLoading || !hasRequiredDocument) {
+            toast.error(
+                "Upload at least one profile photograph or identity card before confirming your booking.",
+            );
+            return;
+        }
+
         if (!hold || hold.status !== "ACTIVE" || remainingSeconds <= 0) {
             toast.error("Your hold has expired. Select your seats again.");
             return;
@@ -532,6 +554,35 @@ export default function HoldSummary({
                         </div>
                     </section>
 
+                    {/* Booking documents */}
+                    <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+                        <div className="mb-5">
+                            <h2 className="text-lg font-semibold text-white">
+                                Booking documents
+                            </h2>
+
+                            <p className="mt-2 text-sm leading-6 text-zinc-400">
+                                Save at least one document before confirming this booking.
+                                You can upload a profile photograph or an identity card.
+                                Both are not required.
+                            </p>
+                        </div>
+
+                        <DocumentUploader
+                            required
+                            onEligibilityChange={handleDocumentEligibilityChange}
+                        />
+
+                        <div className="mt-5">
+                            <Link
+                                href="/me"
+                                className="text-sm font-medium text-zinc-300 underline underline-offset-4 transition hover:text-white"
+                            >
+                                Manage all documents in My Account
+                            </Link>
+                        </div>
+                    </section>
+
                     <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
                         <h2 className="text-lg font-semibold text-white">
                             Payment method
@@ -611,13 +662,19 @@ export default function HoldSummary({
                             disabled={
                                 confirming ||
                                 releasing ||
-                                remainingSeconds <= 0
+                                remainingSeconds <= 0 ||
+                                documentsLoading ||
+                                !hasRequiredDocument
                             }
                             className="mt-6 w-full rounded-xl bg-white px-5 py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                             {confirming
                                 ? "Confirming booking..."
-                                : "Confirm booking"}
+                                : documentsLoading
+                                  ? "Checking documents..."
+                                  : !hasRequiredDocument
+                                    ? "Upload a document to continue"
+                                    : "Confirm booking"}
                         </button>
                     )}
 

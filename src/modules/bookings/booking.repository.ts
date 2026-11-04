@@ -225,6 +225,22 @@ export async function confirmBookingTransaction(
                     };
                 }
 
+                const eligibleDocument = await tx.userDocument.findFirst({
+                    where: {
+                        userId: input.userId,
+                    },
+                    select: {
+                        id: true,
+                    },
+                });
+
+                if (!eligibleDocument) {
+                    throw new BookingError(
+                        "IDENTITY_DOCUMENT_REQUIRED",
+                        "Upload at least one profile photograph or identity card before confirming your booking.",
+                    );
+                }
+
                 // Lock the hold row.
                 const holdRows = await tx.$queryRaw<LockedHold[]>`
           SELECT

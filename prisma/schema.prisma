@@ -67,6 +67,10 @@ enum PaymentMethod {
   CASH_AT_THEATRE
 }
 
+enum UserDocumentType {
+  PROFILE_PHOTO
+  ID_CARD
+}
 // ============================================================
 // USERS AND AUTHENTICATION
 // ============================================================
@@ -84,6 +88,7 @@ model User {
   seatHolds          SeatHold[]
   bookings           Booking[]
   idempotencyRecords IdempotencyRecord[]
+  documents UserDocument[]
 
   @@index([role])
 }
@@ -400,4 +405,20 @@ model IdempotencyRecord {
 
   @@unique([userId, idempotencyKey])
   @@index([userId, createdAt])
+}
+model UserDocument {
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String           @db.Uuid
+  type        UserDocumentType
+  objectKey   String           @unique @db.VarChar(500)
+  fileName    String           @db.VarChar(255)
+  contentType String           @db.VarChar(100)
+  fileSize    Int
+  createdAt   DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime         @updatedAt @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@index([userId])
 }

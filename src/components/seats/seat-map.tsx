@@ -484,7 +484,7 @@ if (!seatMap) {
                             "border-emerald-300 bg-emerald-300 text-zinc-950";
                         } else if (seat.status === "HELD") {
                           buttonClass =
-                            "border-amber-700 bg-amber-950 text-amber-300 cursor-not-allowed";
+                            "border-gray-700 bg-gray-950 text-gray-300 cursor-not-allowed";
                         } else if (seat.status === "BOOKED") {
                           buttonClass =
                             "border-red-900 bg-red-950 text-red-300 cursor-not-allowed";
@@ -509,12 +509,12 @@ if (!seatMap) {
 
                             {!selected &&
                               seat.status === "HELD" && (
-                                <span aria-hidden="true">H</span>
+                                <span aria-hidden="true"></span>
                               )}
 
                             {!selected &&
                               seat.status === "BOOKED" && (
-                                <span aria-hidden="true">B</span>
+                                <span aria-hidden="true"></span>
                               )}
                           </button>
                         );
